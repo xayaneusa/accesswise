@@ -1,5 +1,6 @@
 import React from 'react'
 import Layout from '../components/Layout'
+import { useApp } from '../contexts/AppContext'
 import { Link } from 'react-router-dom'
 import { 
   Users, 
@@ -13,10 +14,16 @@ import {
   User,
   Activity,
   Cog,
-  UserCheck
+  UserCheck,
+  CheckCircle,
+  Clock,
+  AlertTriangle
 } from 'lucide-react'
 
 const AdminPage: React.FC = () => {
+  const { getStats, systemLogs, allUsers, tasks, events } = useApp()
+  const stats = getStats()
+
   // Admin-specific features
   const adminFeatures = [
     {
@@ -27,39 +34,39 @@ const AdminPage: React.FC = () => {
       link: '/admin/users'
     },
     {
-      title: 'System Settings',
-      description: 'Configure system-wide settings and preferences',
-      icon: Settings,
-      color: 'bg-gray-500',
-      link: '/admin/settings'
+      title: 'System Logs',
+      description: 'View and analyze system logs and audit trails',
+      icon: FileText,
+      color: 'bg-yellow-500',
+      link: '/admin/logs'
     },
     {
       title: 'Analytics Dashboard',
       description: 'View comprehensive system analytics and reports',
       icon: BarChart3,
       color: 'bg-indigo-500',
-      link: '/admin/analytics'
+      link: '/analytics'
+    },
+    {
+      title: 'System Settings',
+      description: 'Configure system-wide settings and preferences',
+      icon: Settings,
+      color: 'bg-gray-500',
+      link: '/settings'
     },
     {
       title: 'Security Center',
       description: 'Monitor security events and manage access controls',
       icon: Shield,
       color: 'bg-red-500',
-      link: '/admin/security'
+      link: '/settings'
     },
     {
       title: 'Database Management',
       description: 'Manage database operations and backups',
       icon: Database,
       color: 'bg-green-500',
-      link: '/admin/database'
-    },
-    {
-      title: 'System Logs',
-      description: 'View and analyze system logs and audit trails',
-      icon: FileText,
-      color: 'bg-yellow-500',
-      link: '/admin/logs'
+      link: '/settings'
     }
   ]
 
@@ -70,58 +77,61 @@ const AdminPage: React.FC = () => {
       description: 'Update personal information and preferences',
       icon: User,
       color: 'bg-blue-500',
-      link: '/user'
+      link: '/profile'
     },
     {
       title: 'Calendar',
       description: 'View and manage schedule and appointments',
       icon: Calendar,
       color: 'bg-green-500',
-      link: '/user'
+      link: '/calendar'
     },
     {
       title: 'Notifications',
       description: 'Stay updated with important alerts and messages',
       icon: Bell,
       color: 'bg-yellow-500',
-      link: '/user'
+      link: '/notifications'
     },
     {
-      title: 'User Settings',
-      description: 'Customize account settings and preferences',
-      icon: Cog,
+      title: 'Tasks',
+      description: 'Manage tasks and track progress',
+      icon: CheckCircle,
       color: 'bg-purple-500',
-      link: '/user'
+      link: '/tasks'
     },
     {
-      title: 'Activity Reports',
+      title: 'Analytics',
       description: 'View activity statistics and reports',
       icon: Activity,
       color: 'bg-indigo-500',
-      link: '/user'
+      link: '/analytics'
     },
     {
       title: 'Documents',
       description: 'Access and manage important documents',
       icon: FileText,
       color: 'bg-red-500',
-      link: '/user'
+      link: '/documents'
     }
   ]
 
-  const stats = [
-    { label: 'Total Users', value: '1,234', icon: Users, color: 'text-blue-600' },
-    { label: 'Active Sessions', value: '89', icon: UserCheck, color: 'text-green-600' },
-    { label: 'System Alerts', value: '12', icon: Bell, color: 'text-yellow-600' },
-    { label: 'Database Size', value: '2.4GB', icon: Database, color: 'text-purple-600' }
+  const adminStats = [
+    { label: 'Total Users', value: stats.totalUsers.toString(), icon: Users, color: 'text-blue-600' },
+    { label: 'Active Users', value: stats.activeUsers.toString(), icon: UserCheck, color: 'text-green-600' },
+    { label: 'Total Tasks', value: stats.totalTasks.toString(), icon: CheckCircle, color: 'text-purple-600' },
+    { label: 'System Logs', value: systemLogs.length.toString(), icon: FileText, color: 'text-yellow-600' }
   ]
+
+  const recentLogs = systemLogs.slice(0, 5)
+  const recentTasks = tasks.slice(0, 5)
 
   return (
     <Layout title="Admin Panel">
       <div className="space-y-8">
         {/* Admin Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
+          {adminStats.map((stat, index) => {
             const Icon = stat.icon
             return (
               <div key={index} className="bg-white rounded-lg shadow-sm p-6">
@@ -146,13 +156,10 @@ const AdminPage: React.FC = () => {
             {adminFeatures.map((feature, index) => {
               const Icon = feature.icon
               return (
-                <div
+                <Link
                   key={index}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => {
-                    // For demo purposes, just show an alert
-                    alert(`${feature.title} feature would be implemented here`)
-                  }}
+                  to={feature.link}
+                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow block"
                 >
                   <div className="flex items-center mb-4">
                     <div className={`p-3 rounded-lg ${feature.color}`}>
@@ -163,7 +170,7 @@ const AdminPage: React.FC = () => {
                     </h3>
                   </div>
                   <p className="text-gray-600">{feature.description}</p>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -198,22 +205,70 @@ const AdminPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Admin Activity */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Admin Activity</h2>
-          <div className="space-y-4">
-            {[
-              { action: 'Created new user account for john.doe@example.com', time: '1 hour ago' },
-              { action: 'Updated system security settings', time: '3 hours ago' },
-              { action: 'Performed database backup', time: '6 hours ago' },
-              { action: 'Reviewed and approved user permissions', time: '1 day ago' },
-              { action: 'Updated system configuration', time: '2 days ago' }
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <span className="text-gray-900">{activity.action}</span>
-                <span className="text-sm text-gray-500">{activity.time}</span>
-              </div>
-            ))}
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent System Logs */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Recent System Activity</h2>
+              <Link to="/admin/logs" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View All Logs
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {recentLogs.map((log, index) => (
+                <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                  <div>
+                    <span className="text-gray-900 font-medium">{log.action}</span>
+                    <div className="text-sm text-gray-600">{log.userName}</div>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {new Date(log.timestamp).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Tasks Overview */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Tasks</h2>
+              <Link to="/tasks" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View All Tasks
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {recentTasks.map((task) => {
+                const assignedUser = allUsers.find(u => u.id === task.assignedTo)
+                return (
+                  <div key={task.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center">
+                      <div className="mr-3">
+                        {task.status === 'completed' ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : task.status === 'in-progress' ? (
+                          <Clock className="w-4 h-4 text-blue-500" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-gray-900 font-medium">{task.title}</span>
+                        <div className="text-sm text-gray-600">{assignedUser?.name}</div>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                      task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {task.priority}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
